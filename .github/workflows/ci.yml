@@ -29,14 +29,14 @@ jobs:
       run: uv sync
     
     - name: Run tests
-      run: uv run pytest tests/ -v --cov=context42 --cov-report=xml
+      run: uv run pytest tests/ -v
     
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+    # - name: Upload coverage to Codecov
+#   uses: codecov/codecov-action@v4
+#   with:
+#     file: ./coverage.xml
+#     flags: unittests
+#     name: codecov-umbrella
 
   build:
     name: Build Package
