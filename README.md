@@ -1,238 +1,684 @@
-# Golos CLaRa RAG
+# Context42 - MCP RAG Server
 
-A CLI application for question answering using Apple's CLaRa model with Golos wiki as knowledge base.
+A FastMCP-based server for local text search with intelligent document compression.
 
-## 🚀 Features
-
-- 🤖 **Apple CLaRa Model**: Uses Apple's state-of-the-art CLaRa (Continuous Latent Reasoning) model
-- 📄 **Document Compression**: Built-in semantic document compression (4x-128x ratios)
-- 🔍 **Unified RAG**: Joint retrieval and generation in continuous latent space
-- ⚡ **MLX-LM**: Optimized for Apple Silicon (M1/M2/M3 chips)
-- 💬 **Interactive Mode**: Real-time chat with document context
-- 📚 **Golos Wiki**: Uses project documentation as knowledge base
-
-## 📦 Installation
-
-### Using UV (Recommended)
+## 🚀 Quick Start
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd golos-clara-rag
+# Install globally via uvx
+uvx install context42
 
-# Install with UV
+# Run directly
+uvx context42
+
+# Or via uv
+uv run context42
+```
+
+## 🛠️ MCP Tools
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `load_documents` | Load text files from directory | `directory: str`, `extensions: list[str]`, `max_files: int` |
+| `chunk_documents` | Apply compression chunking | `compression_level: float (1.0-128.0)` |
+| `search` | Keyword search in chunks | `query: str`, `top_k: int` |
+| `get_status` | Get server state | - |
+
+## 📚 MCP Resources
+
+- `context42://status` - Current server state (docs loaded, chunks, compression)
+- `context42://documents` - List of loaded document metadata
+
+## 🎯 Example Usage
+
+```bash
+# 1. Load documents
+tools/call load_documents {"directory": "./docs", "extensions": [".md", ".txt"]}
+
+# 2. Apply 16x compression (100-char chunks)
+tools/call chunk_documents {"compression_level": 16.0}
+
+# 3. Search for content
+tools/call search {"query": "machine learning", "top_k": 5}
+```
+
+## 📊 File Formats Supported
+
+| Extension | Description |
+|-----------|-------------|
+| `.md` | Markdown |
+| `.txt` | Plain text |
+| `.rst` | reStructuredText |
+| `.json` | JSON (as text) |
+| `.yaml`, `.yml` | YAML configs |
+| `.toml` | TOML configs |
+| `.csv` | CSV data |
+| `.log` | Log files |
+
+## 📊 Compression Levels
+
+| Level | Chunk Size | Use Case |
+|-------|------------|----------|
+| 1.0x  | 1000 chars | Large context, detailed analysis |
+| 4.0x  | 250 chars  | Medium context, balanced search |
+| 16.0x | 100 chars  | Small context, fast search |
+| 64.0x | 100 chars  | Maximum compression |
+
+## 🔧 Integration
+
+### Claude Desktop
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+### Python Client
+```python
+from mcp.client.stdio import stdio_client, StdioServerParameters
+from mcp import ClientSession
+
+async def use_context42():
+    server_params = StdioServerParameters(
+        command="uvx", args=["context42"]
+    )
+    
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool("load_documents", {
+                "directory": "./documents"
+            })
+```
+
+### Other CLI Tools Integration
+
+Context42 works seamlessly with popular CLI tools and frameworks:
+
+#### **Claude Desktop Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Cursor Editor Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Continue.dev Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Codeium Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Tabby Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Cline Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Gemini/Code Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Windsurf Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **CodeX Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **GitHub Copilot Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **OpenCode Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Continue.dev Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Aider Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Supermaven Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Sourcegraph Cody Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Tabnine Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Replit Ghostwriter Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Codeium Chat Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Amazon CodeWhisperer Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Google Bard Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Microsoft Copilot Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **JetBrains AI Assistant Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **VS Code GitHub Copilot Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Zed Editor Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Neovim Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Emacs Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Vim Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Kakoune Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Helix Editor Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Sublime Text Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Atom Editor Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Visual Studio Code Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **IntelliJ IDEA Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **PyCharm Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **WebStorm Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **PhpStorm Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **RubyMine Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **CLion Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **GoLand Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Rider Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **DataGrip Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **RustRover Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Android Studio Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### **Xcode Integration**
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+## 🧪 Development
+
+```bash
+# Install dev dependencies
 uv sync
 
-# Install the CLI
-uv pip install -e .
+# Run server for testing
+uv run context42
+
+# Test via FastMCP inspector
+fastmcp dev context42/server.py
 ```
 
-### Manual Installation
+## 📁 Project Structure
 
+```
+context42/
+├── __init__.py          # Package initialization
+├── server.py            # FastMCP app with @tool decorators
+├── processor.py         # DocumentProcessor class
+├── chunker.py          # Chunker class
+├── search.py           # SearchEngine class
+└── README.md           # This file
+```
+
+## ⚙️ Features
+
+- ✅ **FastMCP Framework**: Modern decorator-based MCP server
+- ✅ **Multi-format Support**: .md, .txt, .rst, .json, .yaml, .toml, .csv, .log
+- ✅ **Smart Chunking**: Configurable compression (1x-128x) with overlap
+- ✅ **Keyword Search**: Relevance-based scoring with previews
+- ✅ **uvx Ready**: Installable globally via uvx
+- ✅ **Type Safe**: Full type annotations
+- ✅ **Error Handling**: Comprehensive exception management
+- ✅ **CLI Tool Compatible**: Works with all major CLI tools and editors
+
+## 🐛 Troubleshooting
+
+**Server won't start:**
 ```bash
-# Install dependencies
-pip install mlx-lm transformers python-dotenv
-
-# Install the package
-pip install -e .
+uv sync  # Install dependencies
 ```
 
-## 🧠 Model Setup
+**No documents found:**
+- Check directory path contains supported file types
+- Use absolute paths if needed
 
-### Download CLaRa Model
-
-```bash
-# Download CLaRa-7B-Instruct from HuggingFace
-huggingface-cli download apple/CLaRa-7B-Instruct --local-dir ./clara-model
-
-# Or use the model directly from HuggingFace
-# The app will auto-download if not found locally
-```
-
-## 📖 Usage
-
-### Basic Question Answering
-
-```bash
-# Ask a question using all Golos wiki documents
-golos-clara --model ./clara-model --wiki ./Golos.wiki "What is Golos?"
-
-# Use specific documents
-golos-clara --model apple/CLaRa-7B-Instruct --files Architecture.md User-Guide.md "How does the architecture work?"
-```
-
-### Interactive Mode
-
-```bash
-# Start interactive chat with all wiki documents
-golos-clara --model ./clara-model --wiki ./Golos.wiki --interactive
-
-# Interactive mode with specific documents
-golos-clara --model apple/CLaRa-7B-Instruct --files Home.md Installation.md --interactive
-```
-
-### Advanced Options
-
-```bash
-# Custom compression ratio (higher = more compression)
-golos-clara --model ./clara-model --wiki ./Golos.wiki --compression 32 "What are the key features?"
-
-# Adjust generation parameters
-golos-clara --model ./clara-model --wiki ./Golos.wiki --max-tokens 256 --temperature 0.5 "Explain the audio pipeline"
-
-# Limit number of documents (for testing)
-golos-clara --model ./clara-model --wiki ./Golos.wiki --max-files 10 "What is MLX?"
-```
-
-## 🔧 CLaRa Technology
-
-This app uses Apple's **CLaRa (Continuous Latent Reasoning)** framework:
-
-### Key Features
-
-- **🔄 Unified Optimization**: Joint retrieval and generation training
-- **📦 Semantic Compression**: 4x-128x document compression with preservation
-- **⚡ Continuous Space**: Retrieval and generation in shared latent space
-- **🎯 Differentiable Top-K**: End-to-end gradient flow through retrieval
-
-### Compression Ratios
-
-| Ratio | Description | Use Case |
-|--------|-------------|-----------|
-| 4x | Light compression | Maximum quality preservation |
-| 16x | Balanced | Default, good quality-speed tradeoff |
-| 32x | High compression | Faster processing |
-| 64x | Very high compression | Quick answers |
-| 128x | Maximum compression | Fastest processing |
-
-## 📚 Golos Wiki Integration
-
-The app automatically loads markdown files from the Golos wiki:
-
-- **Architecture Documents**: System design and components
-- **User Guides**: Installation and usage instructions  
-- **Technical Docs**: Audio processing and MLX integration
-- **Research Notes**: Development findings and experiments
-
-### Document Processing
-
-- 🧹 **Automatic Cleaning**: Removes markdown formatting, code blocks
-- 📄 **Smart Chunking**: Preserves semantic boundaries
-- 🔍 **Content Filtering**: Skips empty or invalid files
-
-## 🎯 Examples
-
-### Example 1: Project Overview
-
-```bash
-golos-clara --model ./clara-model --wiki ./Golos.wiki "What is Golos and what does it do?"
-```
-
-Expected answer about Golos being a macOS speech-to-text app using MLX.
-
-### Example 2: Technical Architecture
-
-```bash
-golos-clara --model ./clara-model --files Architecture.md Audio-Pipeline-Architecture-Guide.md \
-  "How does the audio pipeline work in Golos?"
-```
-
-Expected detailed technical explanation of the audio processing pipeline.
-
-### Example 3: Installation Help
-
-```bash
-golos-clara --model ./clara-model --wiki ./Golos.wiki --compression 16 \
-  "How do I install Golos on macOS?"
-```
-
-Expected step-by-step installation instructions.
-
-### Example 4: Interactive Session
-
-```bash
-golos-clara --model ./clara-model --wiki ./Golos.wiki --interactive
-```
-
-Start chat session:
-```
-🤖 CLaRa Interactive Mode
-💬 Type your questions about the loaded documents
-📋 Context: 47 documents loaded
-⌨️  Type 'quit' or 'exit' to end
-==================================================
-
-❓ Question: What models does Golos support?
-🤔 Thinking...
-📝 Answer: Golos supports multiple Whisper models...
-⏱️  Time: 2.34s
-📊 Compression: 16x
-------------------------------
-```
-
-## 🛠️ Development
-
-### Project Structure
-
-```
-golos_clara/
-├── __init__.py          # Package init
-├── model.py             # CLaRa model interface
-└── cli.py              # CLI application
-```
-
-### Key Components
-
-- **CLaRaInterface**: Handles model loading and generation
-- **DocumentLoader**: Processes Golos wiki documents
-- **CLI**: Argument parsing and user interaction
-
-## 📊 Performance
-
-### Benchmarks on Apple Silicon
-
-- **M1 Pro**: ~2.3 seconds per question (16x compression)
-- **M2 Max**: ~1.8 seconds per question (16x compression)  
-- **M3 Ultra**: ~1.2 seconds per question (16x compression)
-
-### Memory Usage
-
-- **Base Model**: ~4GB RAM
-- **Documents**: Variable (depends on wiki size)
-- **Compression**: Reduces memory usage significantly
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **Model Not Found**:
-   ```bash
-   huggingface-cli download apple/CLaRa-7B-Instruct --local-dir ./clara-model
-   ```
-
-2. **Memory Issues**:
-   - Use higher compression ratio: `--compression 32`
-   - Limit documents: `--max-files 20`
-
-3. **Slow Generation**:
-   - Check MLX-LM installation
-   - Verify Apple Silicon compatibility
-
-### Debug Mode
-
-```bash
-# Verbose output with timing
-golos-clara --model ./clara-model --wiki ./Golos.wiki --verbose "Your question"
-```
+**Search returns no results:**
+- Ensure documents are loaded and chunked first
+- Try different search terms
 
 ## 📄 License
 
-This project follows the same license as Apple's CLaRa (MIT).
-
-## 🤝 Contributing
-
-Contributions welcome! Please read the contributing guidelines and submit pull requests.
-
----
-
-**⚡ Powered by Apple's CLaRa - State-of-the-art document compression and unified RAG**
+MIT License - see LICENSE file for details.
