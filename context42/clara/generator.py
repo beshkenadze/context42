@@ -20,19 +20,16 @@ class CLaRaGenerator:
             return {"error": "Model not loaded. Call init_clara first."}
 
         try:
-            # Simulate CLaRa generation (placeholder until real model is available)
-            # In real implementation, this would use:
-            # output = self.manager.model.generate_from_text(
-            #     questions=[question],
-            #     documents=[documents],
-            #     max_new_tokens=max_new_tokens,
-            # )
-
-            # For now, return a simulated response
-            answer = self._simulate_clara_response(question, documents)
+            # Use actual CLaRa model for generation
+            # CLaRa models have generate_from_text method for Q&A
+            output = self.manager.model.generate_from_text(
+                questions=[question],
+                documents=documents,
+                max_new_tokens=max_new_tokens,
+            )
 
             return {
-                "answer": answer,
+                "answer": output[0] if output else "",
                 "model": self.manager.current_model_name,
                 "documents_used": len(documents),
                 "method": "clara",
@@ -54,81 +51,33 @@ class CLaRaGenerator:
         doc_texts = [d["content"] for d in documents]
 
         try:
-            # Simulate CLaRa semantic search (placeholder)
-            # In real implementation, this would use:
-            # output, topk_indices = self.manager.model.generate_from_questions(
-            #     questions=[query],
-            #     documents=[doc_texts],
-            #     max_new_tokens=1,  # Just retrieval, minimal generation
-            # )
+            # Use CLaRa for semantic retrieval
+            # Set max_new_tokens=1 for retrieval-only (minimal generation)
+            output, topk_indices = self.manager.model.generate_from_questions(
+                questions=[query],
+                documents=[doc_texts],
+                max_new_tokens=1,
+            )
 
-            # For now, simulate semantic scoring
-            results = self._simulate_semantic_search(query, documents, top_k)
+            # Map indices to documents with relevance scoring
+            results = []
+            retrieved_indices = topk_indices[0][:top_k] if topk_indices else []
 
-            for r in results:
-                r["method"] = "clara"
+            for idx in retrieved_indices:
+                if idx < len(documents):
+                    # Higher score for earlier retrieved documents
+                    relevance_score = 1.0 - (retrieved_indices.index(idx) * 0.1)
+                    results.append(
+                        {
+                            **documents[idx],
+                            "score": relevance_score,
+                            "method": "clara",
+                            "preview": documents[idx]["content"][:200] + "..."
+                            if len(documents[idx]["content"]) > 200
+                            else documents[idx]["content"],
+                        }
+                    )
 
             return results
         except Exception as e:
             return [{"error": f"Search failed: {str(e)}"}]
-
-    def _simulate_clara_response(self, question: str, documents: List[str]) -> str:
-        """Simulate CLaRa response for demonstration."""
-        # Simple keyword-based simulation for now
-        question_lower = question.lower()
-        all_text = " ".join(documents).lower()
-
-        # Extract relevant sentences based on question keywords
-        keywords = [word for word in question_lower.split() if len(word) > 2]
-        sentences = [s.strip() for s in all_text.split(".") if s.strip()]
-
-        relevant_sentences = []
-        for sentence in sentences:
-            if any(keyword in sentence for keyword in keywords):
-                relevant_sentences.append(sentence)
-
-        if relevant_sentences:
-            return f"Based on the documents, {relevant_sentences[0]}."
-        else:
-            return f"I found information about '{question}' in the loaded documents, but need more specific context to provide a detailed answer."
-
-    def _simulate_semantic_search(
-        self, query: str, documents: List[Dict[str, Any]], top_k: int
-    ) -> List[Dict[str, Any]]:
-        """Simulate semantic search results."""
-        query_lower = query.lower()
-        scored = []
-
-        for doc in documents:
-            content_lower = doc["content"].lower()
-
-            # Simple semantic simulation - look for partial matches and context
-            score = 0
-            query_words = query_lower.split()
-
-            for word in query_words:
-                if len(word) > 2:  # Skip short words
-                    # Exact match
-                    exact_count = content_lower.count(word)
-                    score += exact_count * len(word)
-
-                    # Partial matches for semantic similarity
-                    for content_word in content_lower.split():
-                        if (
-                            word in content_word or content_word in word
-                        ) and word != content_word:
-                            score += len(word) * 0.5
-
-            if score > 0:
-                scored.append(
-                    {
-                        **doc,
-                        "score": score,
-                        "preview": doc["content"][:200] + "..."
-                        if len(doc["content"]) > 200
-                        else doc["content"],
-                    }
-                )
-
-        scored.sort(key=lambda x: x["score"], reverse=True)
-        return scored[:top_k]
