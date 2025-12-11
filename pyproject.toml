@@ -1,7 +1,8 @@
 [project]
 name = "context42"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP RAG Server - Local text search with compression"
+authors = [{name = "Aleksandr Beshkenadze", email = "beshkenadze@gmail.com"}]
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.0.0",
