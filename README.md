@@ -64,7 +64,7 @@ tools/call search {"query": "machine learning", "top_k": 5}
 | 16.0x | 100 chars  | Small context, fast search |
 | 64.0x | 100 chars  | Maximum compression |
 
-## 🔧 Integration
+## 🔧 MCP Integration
 
 ### Quick CLI Setup
 
@@ -72,19 +72,20 @@ Add Context42 to any MCP-compatible tool with this one-liner:
 
 ```bash
 # Claude Desktop
-echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}}' >> ~/Library/Application\ Support/Claude/claude_desktop_config.json
+echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}' >> ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
 # Cursor Editor
-echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}}' > ~/.cursor/mcp_settings.json
+echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}' > ~/.cursor/mcp_settings.json
 
 # Continue.dev
-echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}}' > ~/.continue/config.json
+echo '{"mcpServers":{"context42":{"command":"uvx","args":["context42"]}}' > ~/.continue/config.json
 ```
 
-### Manual Configuration
+### MCP Configuration Standards
 
-For any MCP-compatible tool, add this to your config:
+Context42 follows official MCP configuration patterns and works with all major tools:
 
+#### Standard Configuration Format
 ```json
 {
   "mcpServers": {
@@ -96,14 +97,162 @@ For any MCP-compatible tool, add this to your config:
 }
 ```
 
+#### Claude Code (Recommended)
+```bash
+# Add to user scope (cross-project)
+claude mcp add --transport stdio context42 -- uvx context42
+
+# Add to project scope (team-shared)
+claude mcp add --transport stdio context42 --scope project -- uvx context42
+
+# Add with environment variables
+claude mcp add --transport stdio context42 --env CONTEXT42_DOCS_PATH=/path/to/docs -- uvx context42
+```
+
+#### VS Code
+```json
+{
+  "mcp": {
+    "servers": {
+      "context42": {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["context42"]
+      }
+    }
+  }
+}
+```
+
+#### Cursor/Windsurf
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### Zed Editor
+```json
+{
+  "context_servers": {
+    "Context42": {
+      "source": "custom",
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+#### Cline/Roo Code
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["context42"]
+    }
+  }
+}
+```
+
+### Configuration Scopes
+
+MCP servers can be configured at different levels:
+
+| Scope | Location | Use Case | Command |
+|-------|----------|-----------|---------|
+| **Local** | `~/.claude.json` (project-specific) | Personal, project-only servers | `claude mcp add --scope local` |
+| **Project** | `.mcp.json` (version controlled) | Team-shared servers | `claude mcp add --scope project` |
+| **User** | `~/.claude.json` (global) | Cross-project personal servers | `claude mcp add --scope user` |
+
+### Environment Variable Expansion
+
+Use environment variables in `.mcp.json` for flexible configurations:
+
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"],
+      "env": {
+        "CONTEXT42_DOCS_PATH": "${DOCS_PATH:-./docs}",
+        "CONTEXT42_COMPRESSION": "${COMPRESSION_LEVEL:-4.0}"
+      }
+    }
+  }
+}
+```
+
+### Windows Compatibility
+
+For Windows users, use the `cmd /c` wrapper:
+
+```json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "cmd",
+      "args": ["/c", "uvx", "context42"]
+    }
+  }
+}
+```
+
 ### Supported Tools
 
-Context42 works with all major CLI tools and editors:
-- Claude Desktop, Cursor, Continue.dev, Codeium
-- Cline, Windsurf, GitHub Copilot, OpenCode
-- Aider, Supermaven, Sourcegraph Cody, Tabnine
-- VS Code, JetBrains IDEs, Zed, Neovim, Emacs
-- And all other MCP-compatible tools
+Context42 works with all major MCP-compatible tools:
+
+**AI Coding Assistants:**
+- Claude Desktop, Claude Code, Cursor, Windsurf
+- Cline, Roo Code, Continue.dev, Codeium
+- GitHub Copilot, OpenCode, Aider, Supermaven
+- Sourcegraph Cody, Tabnine, Perplexity
+
+**IDEs & Editors:**
+- VS Code, JetBrains IDEs (IntelliJ, PyCharm, etc.)
+- Zed, Neovim, Emacs, Sublime Text
+
+**CLI Tools:**
+- Amp, BoltAI, Crush, Factory (droid)
+- Kilo Code, LM Studio, Warp Terminal
+
+**Enterprise Platforms:**
+- Google Antigravity, Amazon Q Developer CLI
+- Microsoft Copilot CLI, Qwen Coder
+
+### MCP Resources & Prompts
+
+Context42 exposes MCP resources that can be referenced with `@`:
+
+```bash
+# Reference server status
+@context42://status
+
+# Reference loaded documents
+@context42://documents
+```
+
+Available slash commands (if supported by client):
+```bash
+/mcp__context42__load_docs
+/mcp__context42__search
+/mcp__context42__status
+```
+
+### Authentication & Security
+
+- **No authentication required** - Context42 is a local server
+- **File system access** - Respects your user permissions
+- **No network calls** - All processing happens locally
+- **Enterprise ready** - Can be deployed via managed MCP configurations
 
 ### Python Client
 ```python
@@ -121,6 +270,48 @@ async def use_context42():
             result = await session.call_tool("load_documents", {
                 "directory": "./documents"
             })
+```
+
+### MCP Server Management
+
+```bash
+# List all configured MCP servers
+claude mcp list
+
+# Get Context42 server details
+claude mcp get context42
+
+# Remove Context42 server
+claude mcp remove context42
+
+# Check server status in Claude Code
+/mcp
+
+# Use Claude Code as MCP server (for testing)
+claude mcp serve
+```
+
+### Enterprise Configuration
+
+For enterprise deployments, use managed MCP configuration:
+
+```json
+// managed-mcp.json
+{
+  "mcpServers": {
+    "context42": {
+      "command": "uvx",
+      "args": ["context42"],
+      "env": {
+        "CONTEXT42_DOCS_PATH": "/company/docs",
+        "CONTEXT42_MAX_FILES": "10000"
+      }
+    }
+  },
+  "allowedMcpServers": [
+    {"serverName": "context42"}
+  ]
+}
 ```
 
 ## 🧪 Development
@@ -161,18 +352,62 @@ context42/
 
 ## 🐛 Troubleshooting
 
+### Server Issues
+
 **Server won't start:**
 ```bash
 uv sync  # Install dependencies
+uvx --install context42  # Ensure global installation
 ```
+
+**Connection errors:**
+- Windows: Use `cmd /c` wrapper in configuration
+- macOS/Linux: Check `uvx` is in PATH
+- Verify MCP client supports stdio transport
+
+**Permission errors:**
+- Ensure Context42 has read access to document directories
+- Check file permissions on target files
+
+### Document Loading Issues
 
 **No documents found:**
 - Check directory path contains supported file types
 - Use absolute paths if needed
+- Verify directory exists and is accessible
+
+**Large file processing:**
+- Use compression levels 4.0x-16.0x for better performance
+- Consider splitting very large files (>10MB)
+
+### Search Issues
 
 **Search returns no results:**
 - Ensure documents are loaded and chunked first
-- Try different search terms
+- Try different search terms or partial matches
+- Check compression level isn't too high (reduces context)
+
+**Slow search performance:**
+- Use higher compression levels (16.0x-64.0x)
+- Limit search with `top_k` parameter
+- Consider reducing document corpus size
+
+### MCP Client Issues
+
+**Server not appearing in client:**
+- Restart MCP client after configuration
+- Check configuration JSON syntax
+- Verify server name matches exactly
+
+**Tools not available:**
+- Use `/mcp` command in Claude Code to check status
+- Ensure server initialized successfully
+- Check client logs for connection errors
+
+**Resource references not working:**
+- Verify client supports MCP resources
+- Use format: `@context42://status` or `@context42://documents`
+- Check server has loaded documents first
 
 ## 📄 License
 
