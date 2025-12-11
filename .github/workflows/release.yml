@@ -102,5 +102,5 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          ./dist/context42-${{ steps.version.outputs.version }}-py3-none-any.whl
-          ./dist/context42-${{ steps.version.outputs.version }}.tar.gz
+          ./dist/*.whl
+          ./dist/*.tar.gz
