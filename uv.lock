@@ -291,25 +291,19 @@ wheels = [
 
 [[package]]
 name = "context42"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
+    { name = "accelerate" },
     { name = "fastmcp" },
+    { name = "huggingface-hub" },
+    { name = "torch" },
+    { name = "transformers" },
 ]
 
 [package.optional-dependencies]
 all = [
-    { name = "accelerate" },
-    { name = "huggingface-hub" },
     { name = "pytest" },
-    { name = "torch" },
-    { name = "transformers" },
-]
-clara = [
-    { name = "accelerate" },
-    { name = "huggingface-hub" },
-    { name = "torch" },
-    { name = "transformers" },
 ]
 dev = [
     { name = "pytest" },
@@ -317,15 +311,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "accelerate", marker = "extra == 'clara'", specifier = ">=0.20.0" },
-    { name = "context42", extras = ["clara", "dev"], marker = "extra == 'all'" },
+    { name = "accelerate", specifier = ">=0.20.0" },
+    { name = "context42", extras = ["dev"], marker = "extra == 'all'" },
     { name = "fastmcp", specifier = ">=2.0.0" },
-    { name = "huggingface-hub", marker = "extra == 'clara'", specifier = ">=0.20.0" },
+    { name = "huggingface-hub", specifier = ">=0.20.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "torch", marker = "extra == 'clara'", specifier = ">=2.0.0" },
-    { name = "transformers", marker = "extra == 'clara'", specifier = ">=4.20.0" },
+    { name = "torch", specifier = ">=2.0.0" },
+    { name = "transformers", specifier = ">=4.20.0" },
 ]
-provides-extras = ["clara", "dev", "all"]
+provides-extras = ["lite", "dev", "all"]
 
 [[package]]
 name = "cryptography"

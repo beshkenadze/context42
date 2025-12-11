@@ -1,25 +1,24 @@
 [project]
 name = "context42"
-version = "0.3.0"
+version = "0.3.1"
 description = "MCP RAG Server with CLaRa semantic compression"
 authors = [{name = "Aleksandr Beshkenadze", email = "beshkenadze@gmail.com"}]
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.0.0",
-]
-
-[project.optional-dependencies]
-clara = [
     "torch>=2.0.0",
     "transformers>=4.20.0",
     "accelerate>=0.20.0",
     "huggingface-hub>=0.20.0",
 ]
+
+[project.optional-dependencies]
+lite = []  # For minimal install without CLaRa
 dev = [
     "pytest>=7.0.0",
 ]
 all = [
-    "context42[clara,dev]",
+    "context42[dev]",
 ]
 
 [project.scripts]
