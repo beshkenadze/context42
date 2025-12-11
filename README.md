@@ -421,12 +421,17 @@ fastmcp dev context42/server.py
 
 ```
 context42/
-├── __init__.py          # Package initialization
-├── server.py            # FastMCP app with @tool decorators
+├── __init__.py          # Package exports, CLARA_AVAILABLE flag
+├── server.py            # FastMCP server with MCP tools
+├── cli.py               # CLI: serve, download, models, remove, info
 ├── processor.py         # DocumentProcessor class
-├── chunker.py          # Chunker class
-├── search.py           # SearchEngine class
-└── README.md           # This file
+├── chunker.py           # Chunker class
+├── search.py            # SearchEngine (keyword fallback)
+└── clara/               # Optional CLaRa integration
+    ├── __init__.py      # CLaRa exports
+    ├── config.py        # CLaRaConfig with model registry
+    ├── manager.py       # ModelManager (download/load/unload/remove)
+    └── generator.py     # CLaRaGenerator (ask/search)
 ```
 
 ## ⚙️ Features

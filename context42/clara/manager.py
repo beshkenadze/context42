@@ -127,6 +127,26 @@ class ModelManager:
             return {"status": "unloaded"}
         return {"status": "not_loaded"}
 
+    def remove(self, model_name: str) -> Dict[str, Any]:
+        """Remove downloaded model from disk."""
+        if model_name not in self.config.MODELS:
+            return {"error": f"Unknown model: {model_name}"}
+
+        local_path = self.config.model_path / model_name
+
+        if not local_path.exists():
+            return {"status": "not_found", "model": model_name}
+
+        # Unload if this model is currently loaded
+        if self.current_model_name == model_name:
+            self.unload()
+
+        try:
+            shutil.rmtree(local_path)
+            return {"status": "removed", "model": model_name, "path": str(local_path)}
+        except Exception as e:
+            return {"error": f"Failed to remove: {str(e)}"}
+
     def _get_device(self) -> str:
         """Determine best available device."""
         if self.config.device != "auto":

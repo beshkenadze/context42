@@ -1,151 +1,75 @@
 # Context42 - MCP RAG Server
 
-A FastMCP-based server for local text search with intelligent document compression.
+A FastMCP-based server for local text search with intelligent document compression and optional CLaRa semantic search.
 
 ## 🚀 Quick Start
 
 ```bash
-# Install globally via uvx
-uvx install context42
-
-# Run directly
+# Install basic version (keyword search)
 uvx context42
 
-# Or via uv
-uv run context42
+# Install with CLaRa semantic compression
+pip install context42[clara]
+
+# Run server
+context42 serve
 ```
 
 ## 🛠️ MCP Tools
 
 | Tool | Description | Parameters |
 |------|-------------|------------|
-| `load_documents` | Load text files from directory | `directory: str`, `extensions: list[str]`, `max_files: int` |
-| `chunk_documents` | Apply compression chunking | `compression_level: float (1.0-128.0)` |
-| `search` | Keyword search in chunks | `query: str`, `top_k: int` |
+| `load_documents` | Load text files from directory | `directory`, `extensions`, `max_files` |
+| `chunk_documents` | Apply compression chunking | `compression_level: 1.0-128.0` |
+| `search` | Search chunks (keyword or CLaRa) | `query`, `top_k`, `method` |
 | `get_status` | Get server state | - |
+| **CLaRa Tools** (requires `context42[clara]`) |
+| `init_clara` | Initialize CLaRa model | `model`, `force_download` |
+| `clara_status` | Get CLaRa model status | - |
+| `unload_clara` | Unload model to free memory | - |
+| `ask` | Ask questions about documents | `question`, `max_tokens` |
 
 ## 📚 MCP Resources
 
-- `context42://status` - Current server state (docs loaded, chunks, compression)
-- `context42://documents` - List of loaded document metadata
-
-## 🎯 Example Usage
-
-```bash
-# 1. Load documents
-tools/call load_documents {"directory": "./docs", "extensions": [".md", ".txt"]}
-
-# 2. Apply 16x compression (100-char chunks)
-tools/call chunk_documents {"compression_level": 16.0}
-
-# 3. Search for content
-tools/call search {"query": "machine learning", "top_k": 5}
-```
-
-## 📊 File Formats Supported
-
-| Extension | Description |
-|-----------|-------------|
-| `.md` | Markdown |
-| `.txt` | Plain text |
-| `.rst` | reStructuredText |
-| `.json` | JSON (as text) |
-| `.yaml`, `.yml` | YAML configs |
-| `.toml` | TOML configs |
-| `.csv` | CSV data |
-| `.log` | Log files |
-
-## 📊 Compression Levels
-
-| Level | Chunk Size | Use Case |
-|-------|------------|----------|
-| 1.0x  | 1000 chars | Large context, detailed analysis |
-| 4.0x  | 250 chars  | Medium context, balanced search |
-| 16.0x | 100 chars  | Small context, fast search |
-| 64.0x | 100 chars  | Maximum compression |
-
-## 🔧 Integration
-
-### Claude Desktop
-```json
-{
-  "mcpServers": {
-    "context42": {
-      "command": "uvx",
-      "args": ["context42"]
-    }
-  }
-}
-```
-
-### Python Client
-```python
-from mcp.client.stdio import stdio_client, StdioServerParameters
-from mcp import ClientSession
-
-async def use_context42():
-    server_params = StdioServerParameters(
-        command="uvx", args=["context42"]
-    )
-    
-    async with stdio_client(server_params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            result = await session.call_tool("load_documents", {
-                "directory": "./documents"
-            })
-```
-
-## 🧪 Development
-
-```bash
-# Install dev dependencies
-uv sync
-
-# Run server for testing
-uv run context42
-
-# Test via FastMCP inspector
-fastmcp dev context42/server.py
-```
+- `context42://status` - Server state with CLaRa status
+- `context42://documents` - Loaded document metadata
 
 ## 📁 Project Structure
 
 ```
 context42/
-├── __init__.py          # Package initialization
-├── server.py            # FastMCP app with @tool decorators
+├── __init__.py          # Package exports, CLARA_AVAILABLE flag
+├── server.py            # FastMCP server with MCP tools
+├── cli.py               # CLI: serve, download, models, remove, info
 ├── processor.py         # DocumentProcessor class
-├── chunker.py          # Chunker class
-├── search.py           # SearchEngine class
-└── README.md           # This file
+├── chunker.py           # Chunker class
+├── search.py            # SearchEngine (keyword fallback)
+└── clara/               # Optional CLaRa integration
+    ├── __init__.py      # CLaRa exports
+    ├── config.py        # CLaRaConfig with model registry
+    ├── manager.py       # ModelManager (download/load/unload/remove)
+    └── generator.py     # CLaRaGenerator (ask/search)
 ```
+
+## 🧠 CLaRa Models
+
+| Model | Compression | Use Case |
+|-------|-------------|----------|
+| `clara-7b-instruct-16` | 16× | General Q&A (recommended) |
+| `clara-7b-instruct-128` | 128× | Large corpus search |
+| `clara-7b-base-16` | 16× | Custom fine-tuning |
+| `clara-7b-e2e-16` | 16× | Multi-document RAG |
 
 ## ⚙️ Features
 
-- ✅ **FastMCP Framework**: Modern decorator-based MCP server
-- ✅ **Multi-format Support**: .md, .txt, .rst, .json, .yaml, .toml, .csv, .log
-- ✅ **Smart Chunking**: Configurable compression (1x-128x) with overlap
-- ✅ **Keyword Search**: Relevance-based scoring with previews
-- ✅ **uvx Ready**: Installable globally via uvx
-- ✅ **Type Safe**: Full type annotations
-- ✅ **Error Handling**: Comprehensive exception management
-
-## 🐛 Troubleshooting
-
-**Server won't start:**
-```bash
-uv sync  # Install dependencies
-```
-
-**No documents found:**
-- Check directory path contains supported file types
-- Use absolute paths if needed
-
-**Search returns no results:**
-- Ensure documents are loaded and chunked first
-- Try different search terms
+- FastMCP Framework with decorator-based tools
+- Multi-format support: .md, .txt, .rst, .json, .yaml, .toml, .csv, .log
+- Smart chunking with configurable compression (1×-128×)
+- Optional CLaRa semantic search (Apple's neural compression)
+- Automatic fallback to keyword search when CLaRa unavailable
+- CLI for model management
+- Type safe with full annotations
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT License

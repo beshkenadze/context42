@@ -1,20 +1,32 @@
 """CLaRa configuration management."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import os
+
+
+def _default_model_path() -> Path:
+    """Get default model path from env or default location."""
+    env_path = os.environ.get("CONTEXT42_MODEL_PATH")
+    if env_path:
+        return Path(env_path)
+    return Path.home() / ".cache/context42/models"
 
 
 @dataclass
 class CLaRaConfig:
     """Configuration for CLaRa model management."""
 
-    model_path: Path = Path(
-        os.environ.get("CONTEXT42_MODEL_PATH", Path.home() / ".cache/context42/models")
+    model_path: Path = field(default_factory=_default_model_path)
+    default_model: str = field(
+        default_factory=lambda: os.environ.get("CONTEXT42_MODEL", "clara-7b-instruct-16")
     )
-    default_model: str = os.environ.get("CONTEXT42_MODEL", "clara-7b-instruct-16")
-    device: str = os.environ.get("CONTEXT42_DEVICE", "auto")
-    lazy_load: bool = os.environ.get("CONTEXT42_LAZY_LOAD", "true").lower() == "true"
+    device: str = field(
+        default_factory=lambda: os.environ.get("CONTEXT42_DEVICE", "auto")
+    )
+    lazy_load: bool = field(
+        default_factory=lambda: os.environ.get("CONTEXT42_LAZY_LOAD", "true").lower() == "true"
+    )
 
     # Model registry
     MODELS = {

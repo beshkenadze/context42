@@ -1,6 +1,6 @@
 """CLaRa answer generation using compressed documents."""
 
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 
 
 class CLaRaGenerator:
@@ -15,16 +15,19 @@ class CLaRaGenerator:
         documents: List[str],
         max_new_tokens: int = 64,
     ) -> Dict[str, Any]:
-        """Ask a question about documents."""
+        """Ask a question about documents using CLaRa.
+
+        Uses generate_from_text for Stage 2 (Instruct) models.
+        CLaRa expects: questions=[str], documents=[[str, str, ...]]
+        """
         if not self.manager.is_loaded():
             return {"error": "Model not loaded. Call init_clara first."}
 
         try:
-            # Use actual CLaRa model for generation
-            # CLaRa models have generate_from_text method for Q&A
+            # CLaRa expects documents as list of lists (batch of document sets)
             output = self.manager.model.generate_from_text(
                 questions=[question],
-                documents=documents,
+                documents=[documents],  # Wrap in list for batch format
                 max_new_tokens=max_new_tokens,
             )
 

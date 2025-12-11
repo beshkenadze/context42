@@ -1,7 +1,23 @@
 """CLI for Context42 MCP server with CLaRa support."""
 
 import argparse
-import sys
+
+# Check if CLaRa dependencies are available
+CLARA_AVAILABLE = False
+try:
+    from .clara import CLaRaConfig, ModelManager, CLARA_AVAILABLE as _CA
+
+    CLARA_AVAILABLE = _CA
+except ImportError:
+    pass
+
+
+def _get_manager():
+    """Get ModelManager instance if CLaRa is available."""
+    if not CLARA_AVAILABLE:
+        return None
+    config = CLaRaConfig()
+    return ModelManager(config)
 
 
 def main():
@@ -58,15 +74,23 @@ def main():
 
         serve_main()
     elif args.command == "download":
-        print("CLaRa model download requires: pip install context42[clara]")
-        print("Available models:")
-        print("  clara-7b-instruct-16 (16× compression, ~14GB)")
-        print("  clara-7b-instruct-128 (128× compression, ~14GB)")
-        print("  clara-7b-base-16 (base model, ~14GB)")
-        print("  clara-7b-e2e-16 (end-to-end trained, ~14GB)")
-        if args.local:
-            print("\nDownloaded models:")
-            print("  None - install with: pip install context42[clara]")
+        if not CLARA_AVAILABLE:
+            print("CLaRa model download requires: pip install context42[clara]")
+            print("Available models:")
+            print("  clara-7b-instruct-16 (16× compression, ~14GB)")
+            print("  clara-7b-instruct-128 (128× compression, ~14GB)")
+            print("  clara-7b-base-16 (base model, ~14GB)")
+            print("  clara-7b-e2e-16 (end-to-end trained, ~14GB)")
+        else:
+            manager = _get_manager()
+            print(f"Downloading model: {args.model}")
+            result = manager.download(args.model, force=args.force)
+            if "error" in result:
+                print(f"Error: {result['error']}")
+            else:
+                print(f"Status: {result['status']}")
+                if "path" in result:
+                    print(f"Path: {result['path']}")
     elif args.command == "models":
         print("Available models:")
         print("  clara-7b-instruct-16 (16× compression, ~14GB)")
@@ -75,10 +99,32 @@ def main():
         print("  clara-7b-e2e-16 (end-to-end trained, ~14GB)")
         if args.local:
             print("\nDownloaded models:")
-            print("  None - install with: pip install context42[clara]")
+            if CLARA_AVAILABLE:
+                manager = _get_manager()
+                config = CLaRaConfig()
+                found = False
+                for model_name in config.MODELS:
+                    model_path = config.model_path / model_name
+                    if model_path.exists():
+                        print(f"  {model_name}")
+                        found = True
+                if not found:
+                    print("  (none)")
+            else:
+                print("  Install with: pip install context42[clara]")
     elif args.command == "remove":
-        print(f"Removing model: {args.model}")
-        print("CLaRa model management requires: pip install context42[clara]")
+        if not CLARA_AVAILABLE:
+            print("CLaRa model management requires: pip install context42[clara]")
+        else:
+            manager = _get_manager()
+            print(f"Removing model: {args.model}")
+            result = manager.remove(args.model)
+            if "error" in result:
+                print(f"Error: {result['error']}")
+            else:
+                print(f"Status: {result['status']}")
+                if result["status"] == "removed":
+                    print(f"Removed from: {result['path']}")
     elif args.command == "info":
         model_info = {
             "clara-7b-instruct-16": {
