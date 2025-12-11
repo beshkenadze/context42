@@ -3,7 +3,26 @@ from context42.processor import DocumentProcessor
 from context42.chunker import Chunker
 from context42.search import SearchEngine
 
+# CLaRa integration (optional)
+CLARA_AVAILABLE = False
+ModelManager = None
+CLaRaGenerator = None
+CLaRaConfig = None
+
+try:
+    from context42.clara import ModelManager, CLaRaGenerator, CLaRaConfig
+
+    CLARA_AVAILABLE = True
+except ImportError:
+    pass
+
 mcp = FastMCP("context42")
+
+# Configuration
+if CLARA_AVAILABLE:
+    clara_config = CLaRaConfig()
+    model_manager = ModelManager(clara_config)
+    clara_generator = CLaRaGenerator(model_manager)
 
 # Server state
 state = {
@@ -34,7 +53,7 @@ def load_documents(
 
     Args:
         directory: Path to directory containing text files
-        extensions: File extensions to include (default: .md, .txt, .rst, .json)
+        extensions: File extensions to include (default: .md, .txt, .rst, .json, .yaml, .yml, .toml, .csv, .log)
         max_files: Maximum number of files to load
 
     Returns:
@@ -74,32 +93,109 @@ def chunk_documents(compression_level: float = 1.0) -> dict:
 
 
 @mcp.tool
-def search(query: str, top_k: int = 5) -> list[dict]:
-    """Search document chunks by keyword relevance.
+def search(query: str, top_k: int = 5, method: str = "auto") -> list[dict]:
+    """Search document chunks.
 
     Args:
-        query: Search query (keywords)
+        query: Search query
         top_k: Number of results to return
+        method: Search method (auto, clara, keyword)
 
     Returns:
         List of matching chunks with scores
     """
+    if not state["documents"]:
+        return [{"error": "No documents loaded. Call load_documents first."}]
+
+    # Determine method
+    use_clara = method == "clara" or (
+        method == "auto" and CLARA_AVAILABLE and model_manager.is_loaded()
+    )
+
+    if use_clara and CLARA_AVAILABLE and model_manager.is_loaded():
+        return clara_generator.search(query, state["documents"], top_k)
+
+    # Fallback to keyword search
     if not state["chunks"]:
         return [{"error": "No chunks available. Call chunk_documents first."}]
 
     engine = SearchEngine()
-    return engine.search(state["chunks"], query, top_k)
+    results = engine.search(state["chunks"], query, top_k)
+    for r in results:
+        r["method"] = "keyword"
+    return results
 
 
 @mcp.tool
 def get_status() -> dict:
     """Get current server state."""
-    return {
+    status = {
         "documents_loaded": len(state["documents"]),
         "chunks_created": len(state["chunks"]),
         "compression_level": state["compression_level"],
         "directory": state["directory"],
+        "clara_available": CLARA_AVAILABLE,
     }
+
+    if CLARA_AVAILABLE:
+        status["clara"] = model_manager.get_status()
+
+    return status
+
+
+# CLaRa-specific tools
+if CLARA_AVAILABLE:
+
+    @mcp.tool
+    def init_clara(
+        model: str = "clara-7b-instruct-16",
+        force_download: bool = False,
+    ) -> dict:
+        """Initialize CLaRa model for semantic search.
+
+        Args:
+            model: Model to use (clara-7b-instruct-16, clara-7b-instruct-128, etc.)
+            force_download: Re-download even if model exists
+
+        Returns:
+            Initialization status
+        """
+        if force_download or not (clara_config.model_path / model).exists():
+            download_result = model_manager.download(model, force=force_download)
+            if "error" in download_result:
+                return download_result
+
+        return model_manager.load(model)
+
+    @mcp.tool
+    def clara_status() -> dict:
+        """Get CLaRa model status."""
+        return model_manager.get_status()
+
+    @mcp.tool
+    def unload_clara() -> dict:
+        """Unload CLaRa model to free memory."""
+        return model_manager.unload()
+
+    @mcp.tool
+    def ask(question: str, max_tokens: int = 128) -> dict:
+        """Ask a question about loaded documents using CLaRa.
+
+        Args:
+            question: Question to ask about documents
+            max_tokens: Maximum tokens in response
+
+        Returns:
+            Generated answer based on documents
+        """
+        if not state["documents"]:
+            return {"error": "No documents loaded. Call load_documents first."}
+
+        if not model_manager.is_loaded():
+            return {"error": "CLaRa not initialized. Call init_clara first."}
+
+        doc_contents = [d["content"] for d in state["documents"]]
+        return clara_generator.ask(question, doc_contents, max_tokens)
 
 
 @mcp.resource("context42://status")
@@ -118,6 +214,7 @@ def documents_resource() -> list[dict]:
 
 
 def main():
+    """Main entry point for MCP server."""
     mcp.run()
 
 

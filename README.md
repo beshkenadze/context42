@@ -5,14 +5,20 @@ A FastMCP-based server for local text search with intelligent document compressi
 ## 🚀 Quick Start
 
 ```bash
-# Install globally via uvx
+# Install basic version (keyword search)
 uvx install context42
+
+# Install with CLaRa semantic compression
+pip install context42[clara]
 
 # Run directly
 uvx context42
 
 # Or via uv
 uv run context42
+
+# Download CLaRa model (optional)
+context42 download
 ```
 
 ## 🛠️ MCP Tools
@@ -21,13 +27,58 @@ uv run context42
 |------|-------------|------------|
 | `load_documents` | Load text files from directory | `directory: str`, `extensions: list[str]`, `max_files: int` |
 | `chunk_documents` | Apply compression chunking | `compression_level: float (1.0-128.0)` |
-| `search` | Keyword search in chunks | `query: str`, `top_k: int` |
+| `search` | Search in chunks (keyword or CLaRa) | `query: str`, `top_k: int`, `method: str (auto\|clara\|keyword)` |
 | `get_status` | Get server state | - |
+| **CLaRa Tools** (requires `pip install context42[clara]`) |
+| `init_clara` | Initialize CLaRa model for semantic search | `model: str`, `force_download: bool` |
+| `clara_status` | Get CLaRa model status | - |
+| `unload_clara` | Unload CLaRa model to free memory | - |
+| `ask` | Ask questions about documents using CLaRa | `question: str`, `max_tokens: int` |
 
 ## 📚 MCP Resources
 
-- `context42://status` - Current server state (docs loaded, chunks, compression)
+- `context42://status` - Current server state (docs loaded, chunks, compression, CLaRa status)
 - `context42://documents` - List of loaded document metadata
+
+## 🧠 CLaRa Semantic Compression
+
+**Optional Feature** - Install with `pip install context42[clara]` to enable Apple's CLaRa model for semantic document compression and intelligent search.
+
+### CLaRa Models Available
+
+| Model | Compression | Size | Use Case |
+|-------|-------------|------|----------|
+| `clara-7b-instruct-16` | 16× | ~14GB | General Q&A, **recommended** |
+| `clara-7b-instruct-128` | 128× | ~14GB | Large corpus search |
+| `clara-7b-base-16` | 16× | ~14GB | Custom fine-tuning |
+| `clara-7b-e2e-16` | 16× | ~14GB | Multi-document RAG |
+
+### CLaRa Workflow
+
+```bash
+# 1. Initialize CLaRa (downloads model if needed)
+tools/call init_clara {"model": "clara-7b-instruct-16"}
+
+# 2. Load documents
+tools/call load_documents {"directory": "./docs"}
+
+# 3. Ask semantic questions
+tools/call ask {"question": "What is the main topic of these documents?"}
+
+# 4. Search with CLaRa (auto-enabled when loaded)
+tools/call search {"query": "machine learning", "method": "clara"}
+
+# 5. Check model status
+tools/call clara_status {}
+```
+
+### Fallback Behavior
+
+| CLaRa Status | Search Behavior | Ask Behavior |
+|---------------|----------------|---------------|
+| Not installed | Keyword search | Error message |
+| Installed, not loaded | Keyword search | Error message |
+| Loaded | CLaRa semantic search | CLaRa generation |
 
 ## 🎯 Example Usage
 
@@ -251,8 +302,18 @@ Available slash commands (if supported by client):
 
 - **No authentication required** - Context42 is a local server
 - **File system access** - Respects your user permissions
-- **No network calls** - All processing happens locally
+- **No network calls** - All processing happens locally (except CLaRa model download)
 - **Enterprise ready** - Can be deployed via managed MCP configurations
+- **CLaRa Privacy** - Models downloaded from official HuggingFace repositories
+
+### Memory Requirements
+
+| Configuration | RAM Required | GPU VRAM |
+|---------------|--------------|----------|
+| Fallback (keyword only) | ~100MB | None |
+| CLaRa on CPU | ~16GB | None |
+| CLaRa on MPS (Mac) | ~16GB unified | Shared |
+| CLaRa on CUDA | ~8GB | ~14GB |
 
 ### Python Client
 ```python
@@ -270,6 +331,33 @@ async def use_context42():
             result = await session.call_tool("load_documents", {
                 "directory": "./documents"
             })
+            
+            # Use CLaRa if available
+            clara_result = await session.call_tool("init_clara", {
+                "model": "clara-7b-instruct-16"
+            })
+            
+            # Ask semantic questions
+            answer = await session.call_tool("ask", {
+                "question": "What is the main topic?",
+                "max_tokens": 128
+            })
+```
+
+### CLI Commands
+
+```bash
+# Model management (requires context42[clara])
+context42 download                    # Download default CLaRa model
+context42 models --local               # List downloaded models
+context42 info clara-7b-instruct-16   # Show model details
+context42 remove clara-7b-instruct-128  # Remove model
+
+# Server management
+context42 serve                       # Start MCP server
+context42 serve --model clara-7b-instruct-128  # Use specific model
+context42 serve --preload              # Preload model at startup
+context42 serve --fallback             # Keyword-only mode
 ```
 
 ### MCP Server Management
@@ -304,7 +392,9 @@ For enterprise deployments, use managed MCP configuration:
       "args": ["context42"],
       "env": {
         "CONTEXT42_DOCS_PATH": "/company/docs",
-        "CONTEXT42_MAX_FILES": "10000"
+        "CONTEXT42_MAX_FILES": "10000",
+        "CONTEXT42_MODEL": "clara-7b-instruct-16",
+        "CONTEXT42_DEVICE": "cuda"
       }
     }
   },
@@ -345,6 +435,10 @@ context42/
 - ✅ **Multi-format Support**: .md, .txt, .rst, .json, .yaml, .toml, .csv, .log
 - ✅ **Smart Chunking**: Configurable compression (1x-128x) with overlap
 - ✅ **Keyword Search**: Relevance-based scoring with previews
+- ✅ **CLaRa Integration**: Optional semantic compression with Apple's CLaRa model
+- ✅ **Hybrid Search**: Auto-switches between CLaRa semantic and keyword search
+- ✅ **Model Management**: Download, load, and manage multiple CLaRa models
+- ✅ **Memory Management**: Lazy loading and unloading for resource efficiency
 - ✅ **uvx Ready**: Installable globally via uvx
 - ✅ **Type Safe**: Full type annotations
 - ✅ **Error Handling**: Comprehensive exception management
